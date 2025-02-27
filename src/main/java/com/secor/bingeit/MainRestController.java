@@ -38,7 +38,8 @@ public class MainRestController {
     }
 
     @PostMapping("/update/user/details")
-    public ResponseEntity<?> updateUserDetails(@RequestBody UserView userView, @RequestHeader("Authorization") String token)
+    public ResponseEntity<?> updateUserDetails(@RequestBody UserView userView,
+                                               @RequestHeader("Authorization") String token)
     {
         if(tokenService.validateToken(token))
         {
@@ -102,6 +103,14 @@ public class MainRestController {
         {
             return ResponseEntity.status(401).build();
         }
+    }
+
+    @GetMapping("logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String token)
+    {
+
+        tokenService.invalidateToken(token);
+        return ResponseEntity.ok("Logged out successfully");
     }
 
 

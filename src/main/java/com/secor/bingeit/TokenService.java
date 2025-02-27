@@ -45,6 +45,19 @@ public class TokenService {
 
     }
 
+    public void invalidateToken(String token)
+    {
+        String[] tokenArray = token.split(" ");
+        String tokenS = tokenArray[1];
+
+        if(tokenRepository.findById(tokenS).isPresent())
+        {
+            Token tokenObj = tokenRepository.findById(tokenS).get();
+            tokenObj.setStatus("invalid");
+            tokenRepository.save(tokenObj);
+        }
+    }
+
 
 
 
