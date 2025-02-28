@@ -1,29 +1,39 @@
 package com.secor.bingeit;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Random;
 
 @RestController
 @RequestMapping("/api/v1")
 public class MainRestController {
 
-    @Autowired // another way to ask spring for dependency injection
-    UserRepository userRepository;
+    //@Autowired // another way to ask spring for dependency injection
+    final UserRepository userRepository;
 
-    @Autowired
-    TokenRepository tokenRepository;
+    //@Autowired
+    final TokenRepository tokenRepository;
 
-    @Autowired
-    TokenService tokenService;
+    //@Autowired
+    final TokenService tokenService;
+
+    MainRestController(UserRepository userRepository,
+                       TokenRepository tokenRepository,
+                       TokenService tokenService)
+    {
+        this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
+        this.tokenService = tokenService;
+    }
 
 
     @GetMapping("/welcome")
     public ResponseEntity<?> welcome(@RequestHeader(value = "User-Agent") String userAgent) // Header Value of String Type is being injected into the handler
     {
+        //BEFORE
+
         return ResponseEntity.ok("Welcome to BingeIt! "+userAgent);
+
+        //AFTER
     }
 
     @PostMapping("/signup")
@@ -33,6 +43,7 @@ public class MainRestController {
         user.setUsername(credential.getUsername());
         user.setPassword(credential.getPassword()); // password should be stored only after encoding and not in plaintext
         userRepository.save(user);
+
 
         return ResponseEntity.ok(user);
     }
@@ -92,9 +103,6 @@ public class MainRestController {
     @GetMapping("validate")
     public ResponseEntity<?> validate(@RequestHeader("Authorization") String token)
     {
-
-
-
         if(tokenService.validateToken(token))
         {
             return ResponseEntity.ok("Token is valid");
@@ -112,6 +120,36 @@ public class MainRestController {
         tokenService.invalidateToken(token);
         return ResponseEntity.ok("Logged out successfully");
     }
+
+    @GetMapping("user/details/{username}")
+    public ResponseEntity<?> getUserDetails(@RequestHeader("Authorization") String token,
+                                            @PathVariable("username") String username)
+    {
+        if(tokenService.validateToken(token))
+        {
+            String[] tokenArray = token.split(" ");
+            if(tokenRepository.findById(tokenArray[1]).get().getUsername().equals(username))
+            {
+                User user = userRepository.findById(username).get();
+                UserView userView = new UserView();
+                userView.setUsername(user.getUsername());
+                userView.setFullname(user.getFullname());
+                userView.setEmail(user.getEmail());
+                userView.setPhone(user.getPhone());
+                userView.setRegion(user.getRegion());
+                return ResponseEntity.ok(userView);
+            }
+            else
+            {
+                return ResponseEntity.status(401).body("Token and Username do not match");
+            }
+        }
+        else
+        {
+            return ResponseEntity.status(401).body("Token is invalid");
+        }
+    }
+
 
 
 
